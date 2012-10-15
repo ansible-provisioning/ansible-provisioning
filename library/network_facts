@@ -90,7 +90,6 @@ def main():
     full = module.boolean(module.params.get('full'))
     gateway = module.params.get('gateway')
     inventory = module.params.get('inventory')
-    timeout = float(module.params.get('timeout'))
 
     inventory_file = None
     if inventory:
