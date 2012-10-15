@@ -1,0 +1,290 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# (c) 2012, Jeroen Hoekx <jeroen@hoekx.be>
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+
+DOCUMENTATION = '''
+---
+author: Jeroen Hoekx
+module: virt_boot
+short_description: Define libvirt boot parameters
+description:
+  - "This module configures the boot order or boot media of a libvirt virtual
+     machine. A guest can be configured to boot from network, hard disk, floppy,
+     cdrom or a direct kernel boot. Specific media can be attached for cdrom, 
+     floppy and direct kernel boot."
+  - This module requires the libvirt module.
+version_added: "0.8"
+options:
+  domain:
+    description:
+    - The name of the libvirt domain.
+    required: true
+  boot:
+    description:
+    - "Specify the boot order of the virtual machine. This is a comma-separated 
+      list of: I(fd), I(hd), I(cdrom) and I(network)."
+    required: false
+  bootmenu:
+    choices: [ "yes", "no" ]
+    description:
+    - Enable or disable the boot menu.
+    required: false
+  kernel:
+    description:
+    - The path of the kernel to boot.
+    required: false
+  initrd:
+    description:
+    - The path of the initrd to boot.
+    required: false
+  cmdline:
+    description:
+    - The command line to boot the kernel with.
+    required: false
+  device:
+    default: hdc
+    description:
+    - The libvirt device name of the cdrom/floppy.
+    required: false
+  image:
+    description:
+    - The image to connect to the cdrom/floppy device.
+    required: false
+  start:
+    choices: [ "yes", "no" ]
+    default: yes
+    description:
+    - Start the guest after configuration.
+    required: false
+examples:
+  - description: Boot from a cdrom image.
+    code: virt_boot domain=archrear image=/srv/rear/archrear/rear-archrear.iso boot=cdrom
+  - description: Boot from the local disk.
+    code: virt_boot domain=archrear boot=hd
+  - description: Boot a specific kernel with a special command line.
+    code: virt_boot domain=archrear kernel=$storage/kernel-archrear initrd=$storage/initramfs-archrear.img cmdline="root=/dev/ram0 vga=normal rw"
+  - description: Boot from the harddisk and if that fails from the network.
+    code: virt_boot domain=archrear boot=hd,network
+  - description: Enable the boot menu.
+    code: virt_boot domain=archrear bootmenu=yes
+requirements: [ "libvirt" ]
+notes:
+  - Run this on the libvirt host.
+  - I(kernel) and I(boot) are mutually exclusive.
+  - This module does not change a running system. A shutdown/restart is required.
+'''
+
+import xml.etree.ElementTree as ET
+
+from xml.etree.ElementTree import SubElement
+
+try:
+    import libvirt
+except ImportError:
+    print "failed=True msg='libvirt python module unavailable'"
+    sys.exit(1)
+
+def get_disk(doc, device):
+    for disk in doc.findall('.//disk'):
+        target = disk.find('target')
+        if target is not None:
+            if target.get('dev','') == device:
+                return disk
+
+def attach_disk(domain, doc, device, image):
+    disk = get_disk(doc, device)
+    if disk is not None:
+        source = disk.find('source')
+        if source is not None and source.get('file') == image:
+            return False
+
+    xml = '''<disk type="file" device="disk">
+                <driver name="qemu" type="raw"/>
+                <source file="{path}"/>
+                <target bus="virtio" dev="{dev}"/>
+             </disk>'''.format(path=image, dev=device)
+    domain.updateDeviceFlags(xml, libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+    return True
+
+def detach_disk(domain, doc, device):
+    disk = get_disk(doc, device)
+    if disk is not None:
+        source = disk.find('source')
+        if source is not None and 'file' in source.attrib:
+            del source.attrib['file']
+            domain.updateDeviceFlags(ET.tostring(disk), libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+            return True
+    return False
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec = dict(
+            domain=dict(required=True, aliases=['guest']),
+            boot=dict(),
+            bootmenu=dict(choices=BOOLEANS),
+            kernel=dict(),
+            initrd=dict(),
+            cmdline=dict(),
+            device=dict(default='hdc'),
+            image=dict(),
+            start=dict(choices=BOOLEANS, default='yes'),
+        ),
+        required_one_of = [['boot','kernel','image','bootmenu']],
+        mutually_exclusive = [['boot','kernel']]
+    )
+
+    params = module.params
+
+    domain_name = params['domain']
+
+    bootmenu = module.boolean(params['bootmenu'])
+
+    boot = params['boot']
+    kernel = params['kernel']
+    initrd = params['initrd']
+    cmdline = params['cmdline']
+
+    device = params['device']
+    image = params['image']
+
+    start = module.boolean(params['start'])
+
+    changed = False
+
+    conn = libvirt.open("qemu:///system")
+    domain = conn.lookupByName(domain_name)
+
+    doc = ET.fromstring( domain.XMLDesc(libvirt.VIR_DOMAIN_XML_INACTIVE) )
+
+    ### Connect image
+    if image:
+        changed = changed or attach_disk(domain, doc, device, image)
+        if not boot and not kernel:
+            module.exit_json(changed=changed, image=image, device=device)
+    else:
+        changed = changed or detach_disk(domain, doc, device)
+
+    if changed:
+        doc = ET.fromstring( domain.XMLDesc(libvirt.VIR_DOMAIN_XML_INACTIVE) )
+
+    ### Boot ordering
+    os = doc.find('os')
+    boot_list = os.findall('boot')
+    kernel_el = os.find('kernel')
+    initrd_el = os.find('initrd')
+    cmdline_el = os.find('cmdline')
+
+    ### traditional boot
+    if boot:
+        if kernel_el is not None:
+            changed = True
+            os.remove(kernel_el)
+        if initrd_el is not None:
+            changed = True
+            os.remove(initrd_el)
+        if cmdline_el is not None:
+            changed = True
+            os.remove(cmdline_el)
+
+        items = boot.split(',')
+        if boot_list:
+            needs_change = False
+            if len(items) == len(boot_list):
+                for (boot_el, dev) in zip(boot_list, items):
+                    if boot_el.get('dev') != dev:
+                        needs_change = True
+            else:
+                needs_change = True
+
+            if needs_change:
+                changed = True
+                for boot_el in boot_list:
+                    os.remove(boot_el)
+                for item in items:
+                    boot_el = SubElement(os, 'boot')
+                    boot_el.set('dev', item)
+        else:
+            changed = True
+            for item in items:
+                boot_el = SubElement(os, 'boot')
+                boot_el.set('dev', item)
+    ### direct kernel boot
+    elif kernel:
+        if boot_list:
+            ### libvirt alwas adds boot=hd using direct kernel boot
+            if not (len(boot_list)==1 and boot_list[0].get('dev')=='hd'):
+                changed = True
+                for boot_el in boot_list:
+                    os.remove(boot_el)
+
+        if kernel_el is not None:
+            if kernel_el.text != kernel:
+                changed = True
+                kernel_el.text = kernel
+        else:
+            changed = True
+            kernel_el = SubElement(os, 'kernel')
+            kernel_el.text = kernel
+
+        if initrd_el is not None:
+            if initrd_el.text != initrd:
+                changed = True
+                initrd_el.text = initrd
+        else:
+            changed = True
+            initrd_el = SubElement(os, 'initrd')
+            initrd_el.text = initrd
+
+        if cmdline_el is not None:
+            if cmdline_el.text != cmdline:
+                changed = True
+                cmdline_el.text = cmdline
+        else:
+            changed = True
+            cmdline_el = SubElement(os, 'cmdline')
+            cmdline_el.text = cmdline
+
+    ### Enable/disable bootmenu
+    bootmenu_el = os.find('bootmenu')
+    if bootmenu and bootmenu_el is not None:
+        bootmenu_enabled = bootmenu_el.get('enable')
+        if bootmenu_enabled != 'yes':
+            changed = True
+            bootmenu_el.set('enable', 'yes')
+    elif bootmenu:
+        bootmenu_el = SubElement(os, 'bootmenu')
+        bootmenu_el.set('enable', 'yes')
+        changed = True
+    elif bootmenu_el is not None:
+        os.remove(bootmenu_el)
+        changed = True
+
+    ### save back
+    conn.defineXML( ET.tostring(doc) )
+
+    if start and not domain.isActive():
+        changed = True
+        domain.create()
+
+    module.exit_json(changed=changed)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
