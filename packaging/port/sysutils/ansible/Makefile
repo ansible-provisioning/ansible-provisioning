@@ -1,0 +1,22 @@
+# $FreeBSD$
+
+PORTNAME=       ansible
+PORTVERSION=    0.8
+CATEGORIES=     devel www textproc python
+MASTER_SITES=   https://github.com/downloads/ansible/ansible-provisioning/
+
+MAINTAINER=		briancoca+ansible@gmail.com
+COMMENT=        Ansible ssh based config management framework
+
+RUN_DEPENDS=   python>2.5:${PORTSDIR}/lang/python ansible
+
+FETCH_ARGS=	-pRr
+
+USE_PYTHON=	yes
+USE_PYDISTUTILS=	yes
+
+# extracts with github name + short hash, needs to be updated with new releases
+#pre-configure:
+#	@${MV} ${WRKDIR}/ansible ${WRKSRC}
+
+.include <bsd.port.mk>
