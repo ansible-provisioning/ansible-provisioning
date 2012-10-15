@@ -70,7 +70,7 @@ def main():
             match = dict(),
             media = dict(default=None, choices=['cd', 'fd', 'hd', 'net']),
             image = dict(),
-            state = dict(choices=['boot_once', 'boot_always', 'no_boot', 'connect', 'disconnect']),
+            state = dict(choices=['boot_once', 'boot_always', 'no_boot', 'connect', 'disconnect', 'poweroff']),
         )
     )
 
@@ -93,7 +93,8 @@ def main():
         module.fail_json(rc=1, msg='Failed to connect to %s: %s' % (host, e))
 
     vm = server.get_vm_by_name(guest)
-    status = vm.get_properties()
+    power_status = 'UNKNOWN'
+    changed = False
 
 #    if module.params['media'] != None:
 ##         vm.set_extra_config({ 'bios.bootOrder': module.params['media'] })
@@ -111,10 +112,20 @@ def main():
 
         if power_status in ('POWERED ON', 'POWERING ON', 'RESETTING'):
             vm.reset(sync_run=False)
+            changed = True
         elif power_status in ('POWERED OFF', 'POWERING OFF'):
             vm.power_on(sync_run=False)
+            changed = True
         else:
-            module.fail_json(rc=1, msg='The server \'%s\' is in state \'%s\' !' % (host, power_status))
+            module.fail_json(rc=1, msg='VMWare vSphere (%s) reports that the server \'%s\' is in state \'%s\' !' % (host, guest, power_status))
+
+    elif state in ('poweroff'):
+
+        power_status = vm.get_status()
+
+        if power_status not in ('POWERED OFF', 'POWERING OFF'):
+            vm.power_off(sync_run=True)
+            changed = True
 
     # FIXME: Make this smarter, check power_status until we are sure it has booted
 #    if module.params['state'] in ('boot_once'):
@@ -128,7 +139,7 @@ def main():
 ##                break
 
     server.disconnect()
-    module.exit_json(changed=True)
+    module.exit_json(changed=changed, power=power_status)
 
 # this is magic, see lib/ansible/module_common.py
 #<<INCLUDE_ANSIBLE_MODULE_COMMON>>
