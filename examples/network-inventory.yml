@@ -1,0 +1,26 @@
+- vlan: 10
+  cidr: 10.1.10.0/25
+  description: Production servers in DMZ
+  nameservers: [ 10.1.2.10, 10.1.3.10 ]
+  domains: [ prod.corp.intra, hw.corp.intra, mgmt.corp.intra ]
+  environment: prod
+  datacenter: brussels
+  tier: dmz-1
+  gateway: 10.1.10.232
+- vlan: 15
+  cidr: 10.2.12.0/25
+  description: QA servers in DMZ
+  nameservers: [ 10.1.2.10, 10.1.3.10 ]
+  domains: [ nonprod.corp.intra, hw.corp.intra, mgmt.corp.intra ]
+  environment: nonprod
+  datacenter: antwerp
+  tier: dmz-2
+- vlan: 20
+  cidr: 10.3.148.0/22
+  description: Management servers in Trusted
+  environment: nonprod
+  datacenter: antwerp
+  tier: trusted
+- vlan: 127
+  cidr: 127.0.0.1/32
+  description: Loopback address for testing
