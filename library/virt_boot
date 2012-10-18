@@ -90,6 +90,7 @@ notes:
   - This module does not change a running system. A shutdown/restart is required.
 '''
 
+import sys
 import xml.etree.ElementTree as ET
 
 from xml.etree.ElementTree import SubElement
