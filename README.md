@@ -10,7 +10,7 @@ For more information about Ansible, read the documentation at http://ansible.cc/
 
 Modules
 =======
-We currently provide modules for provisioning:
+We currently provide the following modules for provisioning:
 
  - generic network information (network_facts)
  - HP iLO (hpilo_facts and hpilo_boot)
@@ -30,8 +30,8 @@ We anticipate contributions from users, e.g.
 Anything that adds facts to systems (wrt. provisioning and/or systems management) has a place in this repository.
 
 
-Example
-=======
+Example provisioning process
+============================
 Here is an example how you could perform the following steps:
 
  - Gather facts from separate network inventory (based on IP ranges)
@@ -86,7 +86,7 @@ And here is an example of how one would be using hpilo, vsphere, kvm and network
 
   tasks:
   ### Safeguard to protect production systems
-  - local_action: fail msg="System is not set to 'to-be-staged' in CMDB"
+  - local_action: fail msg="Safeguard - System is not set to 'to-be-staged' in CMDB"
     only_if: "'$cmdb_status' != 'to-be-staged'"
 
   ### Get network facts
@@ -147,7 +147,7 @@ And here is an example of how one would be using hpilo, vsphere, kvm and network
   - local_action: file dest=/var/lib/tftpboot/pxelinux.cfg/${hw_product_uuid} state=absent
 
   ### Check if system is booted into Anaconda
-  - local_action: fail msg="System has not booted into Anaconda post-install !"
+  - local_action: fail msg="Safeguard - System has not booted into Anaconda post-install !"
     only_if: "is_unset('${ansible_cmdline.BOOT_IMAGE}')"
 
   ### Now continue with configuration management by including those playbooks here !
@@ -170,3 +170,27 @@ And here is an example of how one would be using hpilo, vsphere, kvm and network
       Good luck and may you find your inner peace !
       "
 ```
+
+Hardware facts module interface
+===============================
+Every facts module that returns (virtual/physical) hardware facts related to a system (using the hw_ namespace) should at least include the following facts:
+
+    hw_eth0:
+    - macaddress: "00:11:22:33:44:55"        # MAC address of the first interface (usually used for provisioning)
+      macaddress_dash: "00-11-22-33-44-55"   # MAC address in dashed notation (for syslinux)
+    hw_product_uuid: "ef50bac8-2845-40ff-81d9-675315501dac"
+    hw_power_status: ("on", "off")           # Indicates the current power status
+    module_hw: true
+
+This is necessary so that system facts can be reused in playbooks and tasks regardless of the hardware type.
+
+Hardware boot module interface
+==============================
+There is a strict set of options that each of the hardware boot modules should accept. Currently the options and values are close to what the interface to the (physical/virtual) hardware uses, but we should harmonize this so all modules accept similar options in the future.
+
+The boot module should return the following facts:
+
+    boot_power_status: ("on", "off")         # Indicates the power status as it was before changing it
+    module_boot: true
+
+This is necessary so that system facts can be reused in playbooks and tasks regardless of the hardware type.
