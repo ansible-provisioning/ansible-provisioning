@@ -91,9 +91,16 @@ notes:
 '''
 
 import sys
-import xml.etree.ElementTree as ET
 
-from xml.etree.ElementTree import SubElement
+try:
+    import xml.etree.ElementTree as ET
+    from xml.etree.ElementTree import SubElement
+except ImportError:
+    try:
+        import elementtree.ElementTree as ET
+        from elementtree.ElementTree import SubElement
+    except ImportError:
+        print "failed=True msg='ElementTree python module unavailable'"
 
 try:
     import libvirt

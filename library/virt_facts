@@ -70,7 +70,15 @@ notes:
 '''
 
 import sys
-import elementtree.ElementTree
+
+try:
+    import xml.etree.ElementTree as ET
+except ImportError:
+    try:
+        import elementtree.ElementTree as ET
+    except ImportError:
+        print "failed=True msg='ElementTree python module unavailable'"
+
 try:
     import libvirt
 except ImportError:
@@ -101,7 +109,7 @@ def main():
     vm = server.lookupByName(guest)
 
     data = vm.XMLDesc(0)
-    root = elementtree.ElementTree.fromstring(data)
+    root = ET.fromstring(data)
 
     facts = {
         'module_hw': True,
