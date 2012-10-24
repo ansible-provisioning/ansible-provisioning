@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# (c) 2012, D square NV
+# Written by Jeroen Hoekx <jeroen.hoekx@dsquare.be>
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+
+DOCUMENTATION = '''
+---
+author: Jeroen Hoekx
+module: virt_guest
+short_description: Define a libvirt guest
+description:
+  - This module creates a libvirt guest based on a given XML definition.
+  - This module requires the libvirt module.
+version_added: "0.9"
+options:
+  guest:
+    description:
+    - The name of the libvirt domain.
+    required: true
+  state:
+    choices: [ "present", "absent" ]
+    default: "present"
+    description:
+    - Create or remove the VM
+    required: false
+  src:
+    description:
+    - The path of the libvirt XML definition.
+    required: false
+examples:
+  - description: Create a guest
+    code: virt_guest guest=${name} src=/tmp/virt-${name}/vm.xml
+  - description: Remove a guest
+    code: virt_guest guest=${name} state=absent
+requirements: [ "libvirt" ]
+notes:
+  - Run this on the libvirt host.
+'''
+
+import sys
+
+try:
+    import libvirt
+except ImportError:
+    print "failed=True msg='libvirt python module unavailable'"
+    sys.exit(1)
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec = dict(
+            guest=dict(required=True, aliases=['domain']),
+            state=dict(choices=['present','absent'], default='present'),
+            src=dict(),
+        ),
+    )
+
+    guest = module.params['guest']
+    state = module.params['state']
+    src = module.params['src']
+
+    changed = False
+
+    conn = libvirt.open("qemu:///system")
+    try:
+        domain = conn.lookupByName(guest)
+    except libvirt.libvirtError:
+        domain = None
+
+    if state == 'present' and domain is None:
+        if not src:
+            module.fail_json(msg="Parameter 'src' not defined.")
+        conn.defineXML( open(src,'r').read() )
+        changed = True
+    elif state == 'absent' and domain is not None:
+        domain.undefine()
+        changed = True
+
+    module.exit_json(changed=changed)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
