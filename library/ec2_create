@@ -150,7 +150,7 @@ def main():
                                min_count=1,
                                max_count=1,
                                key_name=keypair,
-                               security_groups=group,
+                               security_groups=[group],
                                instance_type=instance_type,
                                kernel_id=kernel,
                                ramdisk_id=ramdisk)
