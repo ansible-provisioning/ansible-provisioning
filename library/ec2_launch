@@ -16,7 +16,7 @@
 
 DOCUMENTATION = '''
 ---
-module: ec2_run_instance
+module: ec2_create
 short_description: create an instance in ec2, return instanceid
 description:
      - creates ec2 instances and optionally waits for it to be 'running'
@@ -45,12 +45,6 @@ options:
        - emi (or ami) to use for the instance
     required: true
     default: null
-    aliases: []
-  count:
-    description:
-       - number of instances to start up
-    required: false
-    default: 1
     aliases: []
   kernel:
     description:
@@ -90,7 +84,7 @@ options:
     aliases: []
   
 examples:
-   - code: "local_action: ec2_run_instance keypair=admin instance_type=m1.large image=emi-40603AD1 wait=true group=webserver"
+   - code: "local_action: ec2_create keypair=admin instance_type=m1.large image=emi-40603AD1 wait=true group=webserver"
      description: "Examples from Ansible Playbooks"
    - code: 
 requirements: [ "euca2ools" ]
@@ -117,7 +111,7 @@ def main():
             instance_type = dict(aliases=['type']),
             image = dict(required=True),
             kernel = dict(),
-            count = dict(default='1'),
+            #count = dict(default='1'), # maybe someday
             ramdisk = dict(),
             wait = dict(choices=BOOLEANS, default=False),
             ec2_url = dict(aliases=['EC2_URL']),
@@ -130,7 +124,7 @@ def main():
     group = module.params.get('group')
     instance_type = module.params.get('instance_type')
     image = module.params.get('image')
-    count = module.params.get('count')
+    #count = module.params.get('count') 
     kernel = module.params.get('kernel')
     ramdisk = module.params.get('ramdisk')
     wait = module.params.get('wait')
@@ -153,8 +147,8 @@ def main():
     conn = eri.make_connection()
     res = eri.make_request_cli(conn, 'run_instances',
                                image_id=image,
-                               min_count=int(count),
-                               max_count=int(count),
+                               min_count=1,
+                               max_count=1,
                                key_name=keypair,
                                security_groups=group,
                                instance_type=instance_type,
