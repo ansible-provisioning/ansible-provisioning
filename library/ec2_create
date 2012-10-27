@@ -30,7 +30,8 @@ options:
     aliases: []
   group:
     description:
-      - security group to use on the instance
+      - security group(s) to use on the instance
+      - for cloud systems supporting more than one group separate the groups with a comma
     required: false
     default: 'default'
     aliases: []
@@ -122,6 +123,7 @@ def main():
 
     keypair = module.params.get('keypair')
     group = module.params.get('group')
+    groups = group.split(',')
     instance_type = module.params.get('instance_type')
     image = module.params.get('image')
     #count = module.params.get('count') 
@@ -150,7 +152,7 @@ def main():
                                min_count=1,
                                max_count=1,
                                key_name=keypair,
-                               security_groups=[group],
+                               security_groups=groups,
                                instance_type=instance_type,
                                kernel_id=kernel,
                                ramdisk_id=ramdisk)
