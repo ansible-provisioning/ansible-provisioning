@@ -127,8 +127,10 @@ def main():
     ChipsetTypes = [v for k, v in sorted([(v, k) for k, v in vbc.all_values('ChipsetType').iteritems()])]
     FirmwareTypes = [v for k, v in sorted([(v, k) for k, v in vbc.all_values('FirmwareType').iteritems()])]
     MachineStates = [v for k, v in sorted([(v, k) for k, v in vbc.all_values('MachineState').iteritems()])]
+    ArchitectureTypes = [ 'i686', 'x86_64' ]
     facts = {
         'module_hw': True,
+        'hw_architecture': ArchitectureTypes[vbox.getGuestOSType(vm.OSTypeId).is64Bit],
         'hw_chipset': ChipsetTypes[vm.chipsetType],
         'hw_description': vm.description,
         'hw_firmware': FirmwareTypes[vm.firmwareType],

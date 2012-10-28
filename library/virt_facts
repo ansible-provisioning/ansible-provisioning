@@ -45,7 +45,7 @@ examples:
       only_if: "'$cmdb_hwmodel'.startswith('KVM')"
   - description: Typical output of virt_facts for a guest
     code:
-    - hw_arch: "i686"
+    - hw_architecture: "i686"
       hw_boot: [ "hd" ]
       hw_eth0:
       - macaddress: "aa:bb:cc:dd:ee:ff"
@@ -118,7 +118,7 @@ def main():
 
     facts = {
         'module_hw': True,
-        'hw_arch': root.find('./os/type').attrib['arch'],
+        'hw_architecture': root.find('./os/type').attrib['arch'],
         'hw_boot': [ d.attrib['dev'] for d in root.findall('./os/boot') ],
         'hw_features': [ f.tag for f in root.find('./features') ],
         'hw_machine': root.find('./os/type').attrib['machine'],
