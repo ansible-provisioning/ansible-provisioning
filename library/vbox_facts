@@ -73,7 +73,6 @@ examples:
         type: "NAT"
       hw_firmware: "EFI"
       hw_memtotal_mb: 512
-      hw_name: "dagswd01"
       hw_ostype: "RedHat_64"
       hw_processor_count: 1
       hw_product_uuid: "7af47453-939b-4d42-9fc9-3feb229a92b5"
@@ -135,7 +134,7 @@ def main():
         'hw_firmware': FirmwareTypes[vm.firmwareType],
 #        'hw_groups': vm.groups,
         'hw_memtotal_mb': vm.memorySize,
-        'hw_name': vm.name,
+#        'hw_name': vm.name,
         'hw_ostype': vm.OSTypeId,
         'hw_processor_count': vm.CPUCount,
         'hw_product_uuid': vm.hardwareUUID,
