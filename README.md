@@ -15,14 +15,18 @@ We currently provide the following modules for provisioning:
  - generic network information (network_facts)
  - HP iLO (hpilo_facts and hpilo_boot)
  - VMWare vSphere (vsphere_facts and vsphere_boot)
- - KVM (virt_facts and virt_boot)
+ - KVM (virt_create, virt_facts and virt_boot)
+ - VirtualBox (vbox_facts and vbox_boot)
+ - Amazon EC² (ec2_create)
 
 We anticipate contributions from users, e.g.
 
+ - IPMI (ipmi_facts and ipmi_boot)
  - IBM RSA (ibmrsa_facts and ibmrsa_boot)
  - DELL DRAC (drac_facts and drac_boot)
  - Xen (as part of virt_facts and virt_boot ?)
- - VirtualBox (vbox_facts and vbox_boot)
+ - VirtualBox (vbox_create)
+ - VMWare vSphere (vsphere_create)
  - RHEV (rhev_facts and rhev_boot)
  - Cobbler (cobbler_facts)
  - RHN (rhn_facts)
