@@ -101,12 +101,18 @@ def main():
 #    password = module.params.get('password')
     guest = module.params.get('guest')
 
-    server = libvirt.open("qemu:///system")
+    try:
+        server = libvirt.open("qemu:///system")
+    except libvirt.libvirtError, e:
+        module.fail_json(rc=1, msg=str(e))
 
     if not server:
         raise Exception("hypervisor connection failure")
 
-    vm = server.lookupByName(guest)
+    try:
+        vm = server.lookupByName(guest)
+    except libvirt.libvirtError, e:
+        module.fail_json(rc=2, msg=str(e))
 
     data = vm.XMLDesc(0)
     root = ET.fromstring(data)
@@ -118,7 +124,6 @@ def main():
         'hw_features': [ f.tag for f in root.find('./features') ],
         'hw_machine': root.find('./os/type').attrib['machine'],
         'hw_memtotal_mb': int(root.findtext('currentMemory'))/1024,
-        'hw_name': root.findtext('name'),
         'hw_processor_count': int(root.findtext('vcpu')),
         'hw_product_uuid': root.findtext('uuid'),
     }
