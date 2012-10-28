@@ -60,7 +60,6 @@ examples:
       hw_features: [ "acpi", "apic", "pae" ]
       hw_machine: "rhel5.4.0"
       hw_memtotal_mb: 1024
-      hw_name: "server02"
       hw_processor_count: 2
       hw_product_uuid: "8cde06d5-df87-2a13-125d-86fbcc3bcfcd"
       module_hw: true
