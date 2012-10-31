@@ -128,7 +128,7 @@ def main():
 
         facts['network_hostname'] = fqdn.split('.')[0]
         facts['network_fqdn'] = fqdn
-        facts['network_domainname'] = '.'.join(fqdn.split('.')[1:])
+        facts['network_domain'] = '.'.join(fqdn.split('.')[1:])
 
     # Most useful information comes from a separate inventory file
     # The inventory file _requires_ at least a cidr entry
