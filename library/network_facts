@@ -77,7 +77,7 @@ def main():
     module = AnsibleModule(
         argument_spec = dict(
             # Provided host can be IP address, hostname or FQDN
-            host = dict(required=True),
+            host = dict(required=True, aliases=['name']),
             # FIXME: Allow to query a specific name server for DNS lookup
 #            nameserver = dict(),
             full = dict(default='no', choices=BOOLEANS),
@@ -103,8 +103,8 @@ def main():
     # Get IP address from DNS
     try:
         ipaddress = socket.gethostbyname(host)
-    except:
-        module.fail_json(rc=1, msg='IP address lookup for host %s failed' % host)
+    except Exception, e:
+        module.fail_json(rc=1, msg=str(e))
 
     ip = netaddr.IPAddress(ipaddress)
     facts = {
@@ -118,8 +118,8 @@ def main():
         # Get FQDN from DNS
         try:
             fqdn = socket.getfqdn(host)
-        except:
-            module.fail_json(rc=2, msg='FQDN lookup for host %s failed' % host)
+        except Exception, e:
+            module.fail_json(rc=2, msg=str(e))
 
         # FIXME: We can also return the reverse namelookup and aliases, if needed
 
