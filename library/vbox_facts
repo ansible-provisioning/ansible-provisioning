@@ -90,7 +90,9 @@ import sys
 try:
     import vboxapi
 except ImportError:
-    print "failed=True msg='vboxapi python module unavailable'"
+    print "rc=256 failed=True msg='vboxapi python module unavailable'"
+    sys.exit(256)
+
 
 def main():
 
