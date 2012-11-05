@@ -22,5 +22,8 @@ setup(name='ansible-provisioning',
       license='GPLv3',
       install_requires=['ansible'],
       package_dir={ 'ansible': 'lib/ansible' },
+      packages=[
+         'ansible.runner.action_plugins',
+      ],
       data_files=data_files
 )
