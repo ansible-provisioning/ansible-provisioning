@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# (c) 2012, Dag Wieers <dag@wieers.com>
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+
+DOCUMENTATION = '''
+---
+author: Dag Wieers
+module: hponcfg
+short_description: Configure HP iLO interface using hponcfg
+description:
+  - This modules configures the HP iLO interface using hponcfg.
+version_added: "0.9"
+options:
+  minfw:
+    description:
+    - The minimum firmware level needed
+  src:
+    description:
+    - The XML file as accepted by hponcfg
+    required: true
+examples:
+  - description: Example hponcfg configuration XML
+    code: |
+      <ribcl VERSION="2.0">
+        <login USER_LOGIN="user" PASSWORD="password">
+          <rib_info MODE="WRITE">
+            <mod_global_settings>
+              <session_timeout value="0"/>
+              <ssh_status value="Y"/>
+              <ssh_port value="22"/>
+              <serial_cli_status value="3"/>
+              <serial_cli_speed value="5"/>
+            </mod_global_settings>
+          </rib_info>
+        </login>
+      </ribcl>
+  - description: Configure HP iLO using test.xml
+    code: hponcfg src=hponcfg.xml
+notes:
+  - You need a working hponcfg on the target system.
+'''
+
+import subprocess
+
+def _run(cmd):
+    # returns (rc, stdout, stderr) from shell command
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, shell=True)
+    stdout, stderr = process.communicate()
+    return (process.returncode, stdout, stderr)
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec = dict(
+            src = dict(required=True),
+            minfw = dict(),
+        )
+    )
+
+    # Consider every action a change (not idempotent yet!)
+    changed = True
+    src = module.params['src']
+    minfw = module.params['minfw']
+
+    options = ' -f %s' % src
+
+    # Add -v for debugging
+#    options += ' -v'
+
+    if minfw:
+        option += ' -m %s' % minfw
+
+    rc, stdout, stderr = _run('hponcfg %s' % options)
+
+    if rc != 0:
+        module.fail_json(rc=rc, msg="Failed to run hponcfg", stdout=stdout, stderr=stderr)
+
+    module.exit_json(changed=changed, stdout=stdout, stderr=stderr)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

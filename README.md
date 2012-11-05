@@ -13,7 +13,7 @@ Modules
 We currently provide the following modules for provisioning:
 
  - generic network information (network_facts)
- - HP iLO (hpilo_facts and hpilo_boot)
+ - HP iLO (hponcfg, hpilo_facts and hpilo_boot)
  - VMWare vSphere (vsphere_facts and vsphere_boot)
  - KVM (virt_create, virt_facts and virt_boot)
  - VirtualBox (vbox_facts and vbox_boot)
@@ -118,12 +118,14 @@ And here is an example of how one would be using hpilo, vsphere, kvm and network
   - local_action: command mkisofs -r -N -allow-leading-dots -d -J -T -b isolinux.bin -c boot.cat -no-emul-boot -V "Ansible RHEL${rhel_version} for ${inventory_hostname_short}" -boot-load-size 4 -boot-info-table -o ${iso_image} ${tempdir.stdout}
   - local_action: command rm -rf ${tempdir.stdout}
 
-  ### Create a custome PXE configuration (based on iLO or ESX information), every possibility is created BECAUSE WE CAN !!
+  ### Create a custom kickstart and PXE configuration (based on iLO or ESX information), only one pxelinux config suffices !
   - local_action: template src=../templates/kickstart/ks.cfg dest=${kickstart_file}
-  - local_action: template src=../templates/kickstart/pxelinux.cfg dest=/var/lib/tftpboot/pxelinux.cfg/${inventory_hostname_short}
-  - local_action: template src=../templates/kickstart/pxelinux.cfg dest=/var/lib/tftpboot/pxelinux.cfg/${hw_product_uuid}
-  - local_action: template src=../templates/kickstart/pxelinux.cfg dest=/var/lib/tftpboot/pxelinux.cfg/${hw_eth0.macaddress_dash}
-  - local_action: template src=../templates/kickstart/pxelinux.cfg dest=/var/lib/tftpboot/pxelinux.cfg/${network_ipaddress_hex}
+  - local_action: template src=../templates/kickstart/pxelinux.cfg dest=/var/lib/tftpboot/pxelinux.cfg/$item
+    with_items:
+    - ${inventory_hostname_short}
+    - ${hw_product_uuid}
+    - ${hw_eth0.macaddress_dash}
+    - ${network_ipaddress_hex}
 
   ### Kick off HP iLO provisioning
   - local_action: hpilo_boot host='${cmdb_parent}' login='${ilologin}' password='${ilopassword}' media='cdrom' image='http://${ansible_server}/iso/ks/${inventory_hostname_short}.iso' state='boot_once'
@@ -146,9 +148,8 @@ And here is an example of how one would be using hpilo, vsphere, kvm and network
   - local_action: wait_for host=$inventory_hostname port=22 state=started timeout=1800 delay=180
 
   ### Remove PXE boot configuration (we keep the one using the hostname_short for debugging purposes)
-  - local_action: file dest=/var/lib/tftpboot/pxelinux.cfg/${network_ipaddress_hex} state=absent
-  - local_action: file dest=/var/lib/tftpboot/pxelinux.cfg/${hw_eth0.macaddress_dash} state=absent
-  - local_action: file dest=/var/lib/tftpboot/pxelinux.cfg/${hw_product_uuid} state=absent
+  - local_action: file dest=/var/lib/tftpboot/pxelinux.cfg/$item state=absent
+    with_items: [${network_ipaddress_hex}, ${hw_eth0.macaddress_dash}, ${hw_product_uuid}]
 
   ### Check if system is booted into Anaconda
   - local_action: fail msg="Safeguard - System has not booted into Anaconda post-install !"
@@ -179,6 +180,7 @@ Hardware facts module interface
 ===============================
 Every facts module that returns (virtual/physical) hardware facts related to a system (using the hw_ namespace) should at least include the following facts:
 
+    hw_architecture: "x86_64"
     hw_eth0:
     - macaddress: "00:11:22:33:44:55"        # MAC address of the first interface (usually used for provisioning)
       macaddress_dash: "00-11-22-33-44-55"   # MAC address in dashed notation (for syslinux)
