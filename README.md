@@ -13,6 +13,7 @@ Modules
 We currently provide the following modules for provisioning:
 
  - generic network information (network_facts)
+ - LVM management (lvol)
  - HP iLO (hponcfg, hpilo_facts and hpilo_boot)
  - VMWare vSphere (vsphere_facts and vsphere_boot)
  - KVM (virt_create, virt_facts and virt_boot)
