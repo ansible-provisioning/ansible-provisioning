@@ -16,7 +16,7 @@ We currently provide the following modules for provisioning:
  - LVM management (lvol)
  - HP iLO (hponcfg, hpilo_facts and hpilo_boot)
  - VMWare vSphere (vsphere_facts and vsphere_boot)
- - KVM (virt_create, virt_facts and virt_boot)
+ - KVM (virt_guest, virt_facts and virt_boot)
  - VirtualBox (vbox_facts and vbox_boot)
  - Amazon EC² (ec2_create)
 
@@ -25,10 +25,10 @@ We anticipate contributions from users, e.g.
  - IPMI (ipmi_facts and ipmi_boot)
  - IBM RSA (ibmrsa_facts and ibmrsa_boot)
  - DELL DRAC (drac_facts and drac_boot)
- - Xen (as part of virt_facts and virt_boot ?)
- - VirtualBox (vbox_create)
- - VMWare vSphere (vsphere_create)
- - RHEV (rhev_facts and rhev_boot)
+ - Xen (as part of virt_guest, virt_facts and virt_boot ?)
+ - VirtualBox (vbox_guest)
+ - VMWare vSphere (vsphere_guest)
+ - RHEV (rhev_guest, rhev_facts and rhev_boot)
  - Cobbler (cobbler_facts)
  - RHN (rhn_facts)
 
@@ -201,3 +201,7 @@ The boot module should return the following facts:
     module_boot: true
 
 This is necessary so that system facts can be reused in playbooks and tasks regardless of the hardware type.
+
+Hardware guest module interface
+===============================
+TBD
