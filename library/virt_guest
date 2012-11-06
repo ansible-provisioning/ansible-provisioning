@@ -29,6 +29,10 @@ description:
   - This module requires the libvirt module.
 version_added: "0.9"
 options:
+  connection:
+    description:
+    - The connection string for libvirt.
+    default: qemu:///system
   guest:
     description:
     - The name of the libvirt domain.
@@ -45,7 +49,7 @@ options:
     required: false
 examples:
   - description: Create a guest
-    code: virt_guest guest=${name} src=/tmp/virt-${name}/vm.xml
+    code: virt_guest guest=${name} src=templates/virt-${name}.xml
   - description: Remove a guest
     code: virt_guest guest=${name} state=absent
 requirements: [ "libvirt" ]
@@ -58,37 +62,46 @@ import sys
 try:
     import libvirt
 except ImportError:
-    print "failed=True msg='libvirt python module unavailable'"
-    sys.exit(1)
+    print "rc=256 failed=True msg='libvirt python module unavailable'"
+    sys.exit(256)
 
 def main():
 
     module = AnsibleModule(
         argument_spec = dict(
-            guest=dict(required=True, aliases=['domain']),
-            state=dict(choices=['present','absent'], default='present'),
-            src=dict(),
+            connection = dict(default='qemu:///system'),
+            guest = dict(required=True, aliases=['domain']),
+            state = dict(choices=['present','absent'], default='present'),
+            src = dict(),
         ),
     )
 
+    connection = module.params['connection']
     guest = module.params['guest']
     state = module.params['state']
     src = module.params['src']
 
     changed = False
 
-    conn = libvirt.open("qemu:///system")
+    try:
+        conn = libvirt.open(connection)
+    except Exception, e:
+        module.fail_json(rc=257, msg=e)
+ 
     try:
         domain = conn.lookupByName(guest)
     except libvirt.libvirtError:
         domain = None
 
-    if state == 'present' and domain is None:
+    if state == 'present' and not domain:
         if not src:
-            module.fail_json(msg="Parameter 'src' not defined.")
-        conn.defineXML( open(src,'r').read() )
+            module.fail_json(rc=258, msg="Parameter 'src' not defined.")
+        try:
+            conn.defineXML( open(src,'r').read() )
+        except OSError, e:
+            module.fail_json(rc=259, msg=str(e))
         changed = True
-    elif state == 'absent' and domain is not None:
+    elif state == 'absent' and domain:
         domain.undefine()
         changed = True
 
