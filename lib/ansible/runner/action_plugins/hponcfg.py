@@ -31,16 +31,14 @@ class ActionModule(object):
         options = utils.parse_kv(module_args)
         src = options.get('src', None)
 
-        src = utils.template(self.runner.basedir, src, inject)
-
         # template the source data locally & transfer
         try:
-            new_src = utils.template_from_file(self.runner.basedir, src, inject)
+            xmldata = utils.template_from_file(self.runner.basedir, src, inject)
         except Exception, e:
             result = dict(failed=True, msg=str(e))
             return ReturnData(conn=conn, comm_ok=False, result=result)
+        tmp_src = self.runner._transfer_str(conn, tmp, 'source', xmldata)
 
-        tmp_src = self.runner._transfer_str(conn, tmp, 'source', new_src)
         # fix file permissions when the copy is done as a different user
         if self.runner.sudo and self.runner.sudo_user != 'root':
             self.runner._low_level_exec_command(conn, "chmod a+r %s" % tmp_src, tmp)
