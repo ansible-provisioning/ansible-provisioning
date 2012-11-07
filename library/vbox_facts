@@ -90,8 +90,8 @@ import sys
 try:
     import vboxapi
 except ImportError:
-    print "rc=256 failed=True msg='vboxapi python module unavailable'"
-    sys.exit(256)
+    print "failed=True msg='vboxapi python module unavailable'"
+    sys.exit(1)
 
 
 def main():
@@ -115,13 +115,13 @@ def main():
     try:
         mgr = vboxapi.VirtualBoxManager(method, { 'url': host, 'user': login, 'password': password })
     except Exception, e:
-        module.fail_json(rc=1, msg=str(e))
+        module.fail_json(msg=str(e))
 
     vbox = mgr.vbox
     try:
         vm = vbox.findMachine(guest)
     except Exception, e:
-        module.fail_json(rc=2, msg=e.msg)
+        module.fail_json(msg=e.msg)
 
     vbc = vboxapi.VirtualBox_constants.VirtualBoxReflectionInfo(False)
 

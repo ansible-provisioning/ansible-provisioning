@@ -90,7 +90,7 @@ def main():
 #        server.connect(host, login, password, trace_file='debug.txt')
         server.connect(host, login, password)
     except Exception, e:
-        module.fail_json(rc=1, msg='Failed to connect to %s: %s' % (host, e))
+        module.fail_json(msg='Failed to connect to %s: %s' % (host, e))
 
     vm = server.get_vm_by_name(guest)
     power_status = 'UNKNOWN'
@@ -108,7 +108,7 @@ def main():
         power_status = vm.get_status()
 
         if not force and power_status in ('POWERED ON', 'SUSPENDED', 'POWERING ON', 'RESETTING', 'BLOCKED ON MSG'):
-            module.fail_json(rc=1, msg='The server \'%s\' is in state \'%s\' !' % (host, power_status))
+            module.fail_json(msg='The server \'%s\' is in state \'%s\' !' % (host, power_status))
 
         if power_status in ('POWERED ON', 'POWERING ON', 'RESETTING'):
             vm.reset(sync_run=False)
@@ -117,7 +117,7 @@ def main():
             vm.power_on(sync_run=False)
             changed = True
         else:
-            module.fail_json(rc=1, msg='VMWare vSphere (%s) reports that the server \'%s\' is in state \'%s\' !' % (host, guest, power_status))
+            module.fail_json(msg='VMWare vSphere (%s) reports that the server \'%s\' is in state \'%s\' !' % (host, guest, power_status))
 
     elif state in ('poweroff'):
 

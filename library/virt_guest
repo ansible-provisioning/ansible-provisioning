@@ -62,8 +62,8 @@ import sys
 try:
     import libvirt
 except ImportError:
-    print "rc=256 failed=True msg='libvirt python module unavailable'"
-    sys.exit(256)
+    print "failed=True msg='libvirt python module unavailable'"
+    sys.exit(1)
 
 def main():
 
@@ -86,7 +86,7 @@ def main():
     try:
         conn = libvirt.open(connection)
     except Exception, e:
-        module.fail_json(rc=257, msg=e)
+        module.fail_json(msg=str(e))
  
     try:
         domain = conn.lookupByName(guest)
@@ -95,11 +95,11 @@ def main():
 
     if state == 'present' and not domain:
         if not src:
-            module.fail_json(rc=258, msg="Parameter 'src' not defined.")
+            module.fail_json(msg="Parameter 'src' not defined.")
         try:
             conn.defineXML( open(src,'r').read() )
         except OSError, e:
-            module.fail_json(rc=259, msg=str(e))
+            module.fail_json(msg=str(e))
         changed = True
     elif state == 'absent' and domain:
         domain.undefine()

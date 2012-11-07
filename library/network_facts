@@ -96,15 +96,15 @@ def main():
         inventory_file = os.path.expanduser(module.params.get('inventory'))
 
         if not os.path.exists(inventory_file):
-            module.fail_json(rc=11, msg="Inventory %s failed to transfer" % inventory_file)
+            module.fail_json(msg="Inventory %s failed to transfer" % inventory_file)
         if not os.access(inventory_file, os.R_OK):
-            module.fail_json(rc=12, msg="Inventory %s not readable" % inventory_file)
+            module.fail_json(msg="Inventory %s not readable" % inventory_file)
 
     # Get IP address from DNS
     try:
         ipaddress = socket.gethostbyname(host)
     except Exception, e:
-        module.fail_json(rc=1, msg=str(e))
+        module.fail_json(msg=str(e))
 
     ip = netaddr.IPAddress(ipaddress)
     facts = {
@@ -119,12 +119,12 @@ def main():
         try:
             fqdn = socket.getfqdn(host)
         except Exception, e:
-            module.fail_json(rc=2, msg=str(e))
+            module.fail_json(msg=str(e))
 
         # FIXME: We can also return the reverse namelookup and aliases, if needed
 
         if ipaddress == fqdn == host:
-            module.fail_json(rc=3, msg='Name lookup for host %s failed' % host)
+            module.fail_json(msg='Name lookup for host %s failed' % host)
 
         facts['network_hostname'] = fqdn.split('.')[0]
         facts['network_fqdn'] = fqdn
@@ -160,7 +160,7 @@ def main():
                     facts['network_gateway'] = str(netaddr.IPAddress(net.last - 1))
             break
         else:
-            module.fail_json(rc=13, msg='Network for host %s (%s) is missing from %s' % (host, str(ip), inventory_file))
+            module.fail_json(msg='Network for host %s (%s) is missing from %s' % (host, str(ip), inventory_file))
 
     module.exit_json(ansible_facts=facts)
 

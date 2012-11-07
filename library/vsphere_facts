@@ -98,12 +98,12 @@ def main():
 #        server.connect(host, login, password, trace_file='debug.txt')
         server.connect(host, login, password)
     except Exception, e:
-        module.fail_json(rc=1, msg='Failed to connect to %s: %s' % (host, e))
+        module.fail_json(msg='Failed to connect to %s: %s' % (host, e))
 
     try:
         vm = server.get_vm_by_name(guest)
     except pysphere.resources.vi_exception.VIException, e:
-        module.fail_json(rc=2, msg=e.message)
+        module.fail_json(msg=e.message)
 
     data = vm.get_properties()
     facts = {

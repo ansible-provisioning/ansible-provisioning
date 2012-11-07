@@ -103,7 +103,7 @@ def main():
     try:
         server = libvirt.open("qemu:///system")
     except libvirt.libvirtError, e:
-        module.fail_json(rc=1, msg=str(e))
+        module.fail_json(msg=str(e))
 
     if not server:
         raise Exception("hypervisor connection failure")
@@ -111,7 +111,7 @@ def main():
     try:
         vm = server.lookupByName(guest)
     except libvirt.libvirtError, e:
-        module.fail_json(rc=2, msg=str(e))
+        module.fail_json(msg=str(e))
 
     data = vm.XMLDesc(0)
     root = ET.fromstring(data)
