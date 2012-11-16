@@ -132,6 +132,7 @@ def main():
 
         ifidx += 1
 
+    server.disconnect()
     module.exit_json(ansible_facts=facts)
 
 # this is magic, see lib/ansible/module_common.py
