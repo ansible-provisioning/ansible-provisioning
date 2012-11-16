@@ -6,7 +6,7 @@ Build-Depends: cdbs, debhelper (>= 5.0.0)
 Standards-Version: 3.9.1
 Homepage: http://ansible.cc/
 
-Package: ansible
+Package: ansible-provisioning
 Architecture: all
 Depends: python, ansible
 Description: Ansible Application
