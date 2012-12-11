@@ -1,0 +1,129 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright 2012 Dag Wieers <dag@wieers.com>
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+
+DOCUMENTATION = '''
+---
+author: Dag Wieers
+module: vsphere_facts
+short_description: Gather facts for a guest on VMWare vSphere
+description:
+  - This module gathers facts for a specific guest on VMWare vSphere.
+    These facts include hardware and network related information useful
+    for provisioning (e.g. macaddress, uuid).
+  - This module requires the pysphere python module.
+version_added: "0.8"
+options:
+  host:
+    description:
+      - The vSphere server from the cluster the virtual server is located on.
+    required: true
+  login:
+    description:
+      - The login name to authenticate on the vSphere cluster.
+    required: true
+  password:
+    description:
+      - The password to authenticate on the vSphere cluster.
+    required: true
+  guest:
+    description:
+      - The virtual server to gather facts for on the vSphere cluster.
+    required: true
+  notes:
+    description:
+      - Notes to add to the guest
+examples:
+  - description: Modify guest notes
+    code: |
+      - local_action: vsphere_facts host=$esxserver login=$esxlogin password=$esxpassword guest=$inventory_hostname_short notes="$inventory_hostname_short $cmdb_applications\n$cmdb_primaryfunction"
+        only_if: "'$cmdb_hwmodel'.startswith('VMWare ')
+notes:
+  - This module ought to be run from a system that can access vSphere directly.
+    Either by using local_action, or using delegate_to.
+'''
+
+import sys
+try:
+    import pysphere
+except ImportError:
+    print "failed=True msg='pysphere python module unavailable'"
+    sys.exit(1)
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec = dict(
+            host = dict(required=True),
+            login = dict(required=True),
+            password = dict(required=True),
+            guest = dict(required=True, aliases=['name']),
+            notes = dict()
+        )
+    )
+
+    host = module.params.get('host')
+    login = module.params.get('login')
+    password = module.params.get('password')
+    guest = module.params.get('guest')
+    notes = module.params.get('notes', None)
+
+    res = {}
+
+    server = pysphere.VIServer()
+    try:
+#        server.connect(host, login, password, trace_file='debug.txt')
+        server.connect(host, login, password)
+    except Exception, e:
+        module.fail_json(msg='Failed to connect to %s: %s' % (host, e))
+
+    try:
+        vm = server.get_vm_by_name(guest)
+    except pysphere.resources.vi_exception.VIException, e:
+        module.fail_json(rc=2, msg=e.message)
+
+    if notes:
+        request = pysphere.resources.VimService_services.ReconfigVM_TaskRequestMsg()
+        _this = request.new__this(vm._mor)
+        _this.set_attribute_type(vm._mor.get_attribute_type())
+        request.set_element__this(_this)
+
+        spec = request.new_spec()
+
+        if vm.properties.config.annotation != notes:
+            spec.Annotation = notes
+            res['changed'] = True
+        res['notes'] = notes
+
+        request.Spec = spec
+
+        task = server._proxy.ReconfigVM_Task(request)._returnval
+        vi_task = pysphere.VITask(task, server)
+
+        status = vi_task.wait_for_state([vi_task.STATE_SUCCESS, vi_task.STATE_ERROR])
+
+        if status == vi_task.STATE_ERROR:
+            module.fail_json(msg=vi_task.get_error_message())
+
+    server.disconnect()
+    module.exit_json(**res)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
