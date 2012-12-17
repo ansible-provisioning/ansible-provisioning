@@ -33,11 +33,12 @@ class ActionModule(object):
 
         if image:
             # FIXME: We are transfering to /tmp in order to allow user qemu to have access
-            tmp_src = self.runner._transfer_str(conn, '/tmp', os.path.basename(image), image)
+            tmp_image = os.path.join('/tmp', os.path.basename(image))
+            conn.put_file(image, tmp_image)
 
             # fix file permissions when the copy is done as a different user
             if self.runner.sudo and self.runner.sudo_user != 'root':
-                self.runner._low_level_exec_command(conn, "chmod a+r %s" % tmp_src, tmp)
+                self.runner._low_level_exec_command(conn, "chmod a+r %s" % tmp_image, tmp)
 
-            module_args = "%s image=%s" % (module_args, tmp_src)
+            module_args = "%s image=%s" % (module_args, tmp_image)
         return self.runner._execute_module(conn, tmp, 'virt_boot', module_args, inject=inject)
