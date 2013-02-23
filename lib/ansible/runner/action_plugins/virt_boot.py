@@ -31,7 +31,8 @@ class ActionModule(object):
         options = utils.parse_kv(module_args)
         image = options.get('image', None)
 
-        if image:
+        if image and os.path.exists(image):
+            ### Assume remote file if image does not exist locally
             # FIXME: We are transfering to /tmp in order to allow user qemu to have access
             tmp_image = os.path.join('/tmp', os.path.basename(image))
             conn.put_file(image, tmp_image)
