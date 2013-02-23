@@ -58,13 +58,6 @@ notes:
 
 import subprocess
 
-def _run(cmd):
-    # returns (rc, stdout, stderr) from shell command
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, shell=True)
-    stdout, stderr = process.communicate()
-    return (process.returncode, stdout, stderr)
-
 def main():
 
     module = AnsibleModule(
@@ -87,7 +80,7 @@ def main():
     if minfw:
         option += ' -m %s' % minfw
 
-    rc, stdout, stderr = _run('hponcfg %s' % options)
+    rc, stdout, stderr = module.run_command('hponcfg %s' % options)
 
     if rc != 0:
         module.fail_json(rc=rc, msg="Failed to run hponcfg", stdout=stdout, stderr=stderr)

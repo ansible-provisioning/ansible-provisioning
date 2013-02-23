@@ -59,13 +59,6 @@ notes:
 
 import subprocess
 
-def _run(cmd):
-    # returns (rc, stdout, stderr) from shell command
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, shell=True)
-    stdout, stderr = process.communicate()
-    return (process.returncode, stdout, stderr)
-
 def parse_lvs(data):
     lvs = []
     for line in data.splitlines():
@@ -98,7 +91,7 @@ def main():
     if size:
         size = int(size)
 
-    rc,current_lvs,err = _run("lvs --noheadings -o lv_name,size,lv_path --units m --separator ';' %s"%(vg))
+    rc,current_lvs,err = module.run_command("lvs --noheadings -o lv_name,size,lv_path --units m --separator ';' %s"%(vg))
 
     if rc != 0:
         module.fail_json(msg="Volume group %s does not exist."%vg, rc=rc, err=err)
@@ -117,7 +110,7 @@ def main():
     if this_lv is None:
         if state == 'present':
             ### create LV
-            rc,_,err = _run("lvcreate -n %s -L %sm %s"%(lv, size, vg))
+            rc,_,err = module.run_command("lvcreate -n %s -L %sm %s"%(lv, size, vg))
             if rc == 0:
                 changed = True
             else:
@@ -125,7 +118,7 @@ def main():
     else:
         if state == 'absent':
             ### remove LV
-            rc,_,err = _run("lvremove --force %s"%(this_lv['path']))
+            rc,_,err = module.run_command("lvremove --force %s"%(this_lv['path']))
             if rc == 0:
                 module.exit_json(changed=True)
             else:
@@ -138,7 +131,7 @@ def main():
             tool = 'lvreduce --force'
 
         if tool:
-            rc,_,err=_run("%s -L %sm %s"%(tool, size, this_lv['path']))
+            rc,_,err = module.run_command("%s -L %sm %s"%(tool, size, this_lv['path']))
             if rc == 0:
                 changed = True
             else:
