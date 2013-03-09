@@ -55,6 +55,8 @@ examples:
 requirements: [ "libvirt" ]
 notes:
   - Run this on the libvirt host.
+  - This returns a provisioning_status variable you can register to create groups.
+    Possible values are: provisioned, unprovisioned, absent
 '''
 
 import sys
@@ -82,6 +84,7 @@ def main():
     src = module.params['src']
 
     changed = False
+    provisioning_status = ''
 
     try:
         conn = libvirt.open(connection)
@@ -93,6 +96,8 @@ def main():
     except libvirt.libvirtError:
         domain = None
 
+    if state == 'present' and domain:
+        provisioning_status = 'provisioned'
     if state == 'present' and not domain:
         if not src:
             module.fail_json(msg="Parameter 'src' not defined.")
@@ -101,11 +106,13 @@ def main():
         except OSError, e:
             module.fail_json(msg=str(e))
         changed = True
+        provisioning_status = 'unprovisioned'
     elif state == 'absent' and domain:
         domain.undefine()
         changed = True
+        provisioning_status = 'absent'
 
-    module.exit_json(changed=changed)
+    module.exit_json(changed=changed, provisioning_status=provisioning_status)
 
 # this is magic, see lib/ansible/module_common.py
 #<<INCLUDE_ANSIBLE_MODULE_COMMON>>
