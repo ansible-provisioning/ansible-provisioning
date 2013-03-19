@@ -80,10 +80,10 @@ def main():
         size = module.params['size'] * 1024 * 1024
 
         if not os.path.exists(dest):
-            module.run_command('%s create -f %s %s %s'%(qemu_img, img_format, dest, size), check_rc=True)
+            module.run_command('%s create -f %s "%s" %s'%(qemu_img, img_format, dest, size), check_rc=True)
             changed = True
         else:
-            rc, stdout, _ = module.run_command('%s info %s'%(qemu_img, dest), check_rc=True)
+            rc, stdout, _ = module.run_command('%s info "%s"'%(qemu_img, dest), check_rc=True)
             current_size = None
             for line in stdout.splitlines():
                 if 'virtual size' in line:
@@ -92,7 +92,7 @@ def main():
             if not current_size:
                 module.fail_json(msg='Unable to read virtual disk size of %s'%(dest))
             if current_size != size:
-                module.run_command('%s resize %s %s'%(qemu_img, dest, size), check_rc=True)
+                module.run_command('%s resize "%s" %s'%(qemu_img, dest, size), check_rc=True)
                 changed = True
 
     if module.params['state'] == 'absent':
