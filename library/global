@@ -1,0 +1,47 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright 2013 Dag Wieers <dag@wieers.com>
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+
+DOCUMENTATION = '''
+---
+author: Dag Wieers
+module: global
+short_description: Set global variables (aka host facts)
+description:
+     - This module sets one or more global variables. This can be useful
+       for debugging, or to work around a specific implementation limit.
+     - In comparison to variables defined in the playbook, global variables
+       can be set conditionally (like any module) and are available in other
+       plays.
+     - The global module also allows you to 'export' prompt_vars to other
+       plays in your playbook.
+options:
+  key_value:
+    description:
+      - the C(global) module takes key=value pairs as variables to set in the
+        global scope
+    required: true
+    default: null
+version_added: "1.2"
+examples:
+    - description: "Example global variables"
+      code: 'action: global var="something" global_var="${local_var}"'
+notes:
+    - You can set local variables using the C(set) module.
+'''
