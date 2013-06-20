@@ -55,8 +55,8 @@ examples:
 requirements: [ "libvirt" ]
 notes:
   - Run this on the libvirt host.
-  - This returns a provisioning_status variable you can register to create groups.
-    Possible values are: provisioned, unprovisioned, absent
+  - "This returns a provisioning_status variable you can register to create groups.
+    Possible values are: provisioned, unprovisioned, absent"
 '''
 
 import sys

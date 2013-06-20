@@ -132,8 +132,8 @@ options:
     default: null
   guestosid:
     description:
-      - A vmware guest needs to have a specific OS identifier set on it during creation. You can find your os guestosid at the following URL:
-      http://www.vmware.com/support/developer/vc-sdk/visdk41pubs/ApiReference/vim.vm.GuestOsDescriptor.GuestOsIdentifier.html
+      - "A vmware guest needs to have a specific OS identifier set on it during creation. You can find your os guestosid at the following URL:
+      http://www.vmware.com/support/developer/vc-sdk/visdk41pubs/ApiReference/vim.vm.GuestOsDescriptor.GuestOsIdentifier.html"
     required: true
     default: null
 # informational: requirements for nodes
