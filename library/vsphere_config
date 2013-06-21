@@ -52,8 +52,8 @@ options:
 examples:
   - description: Modify guest notes
     code: |
-      - local_action: vsphere_facts host=$esxserver login=$esxlogin password=$esxpassword guest=$inventory_hostname_short notes="$inventory_hostname_short $cmdb_applications\n$cmdb_primaryfunction"
-        only_if: "'$cmdb_hwmodel'.startswith('VMWare ')"
+      - local_action: vsphere_facts host=$esxserver login=$esxlogin password=$esxpassword guest=$inventory_hostname_short notes=\"$inventory_hostname_short $cmdb_applications $cmdb_primaryfunction\"
+        only_if: '$cmdb_hwmodel'.startswith('VMWare ')
 notes:
   - This module ought to be run from a system that can access vSphere directly.
     Either by using local_action, or using delegate_to.
