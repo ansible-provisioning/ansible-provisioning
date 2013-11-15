@@ -25,7 +25,7 @@ module: qemu_img
 short_description: Create qemu images
 description:
   - "This module creates images for qemu."
-version_added: "1.1"
+version_added: "1.2"
 options:
   dest:
     description:
@@ -38,6 +38,10 @@ options:
   size:
     description:
     - The size of the image in megabytes.
+    required: false
+  opt:
+    description:
+    - Comma separated list of format specific options in a name=value format.
     required: false
   state:
     choices: [ "absent", "present" ]
@@ -62,6 +66,7 @@ def main():
     module = AnsibleModule(
         argument_spec = dict(
             dest=dict(type='str', required=True),
+            opt=dict(type='str'),
             format=dict(type='str', default='qcow2'),
             size=dict(type='int'),
             state=dict(type='str', choices=['absent', 'present'], default='present'),
@@ -73,6 +78,7 @@ def main():
 
     dest = module.params['dest']
     img_format = module.params['format']
+    opt = module.params['opt']
 
     if module.params['state'] == 'present':
         if not module.params['size']:
@@ -80,7 +86,10 @@ def main():
         size = module.params['size'] * 1024 * 1024
 
         if not os.path.exists(dest):
-            module.run_command('%s create -f %s "%s" %s'%(qemu_img, img_format, dest, size), check_rc=True)
+            if not opt:
+                module.run_command('%s create -f %s "%s" %s'%(qemu_img, img_format, dest, size), check_rc=True)
+            else:
+                module.run_command('%s create -f %s -o %s "%s" %s'%(qemu_img, img_format, opt, dest, size), check_rc=True)
             changed = True
         else:
             rc, stdout, _ = module.run_command('%s info "%s"'%(qemu_img, dest), check_rc=True)
