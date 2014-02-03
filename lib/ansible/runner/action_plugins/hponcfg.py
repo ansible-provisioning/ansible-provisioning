@@ -16,6 +16,7 @@
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from ansible.utils import template
 from ansible import utils
 from ansible.runner.return_data import ReturnData
 
@@ -33,7 +34,7 @@ class ActionModule(object):
 
         # template the source data locally & transfer
         try:
-            xmldata = utils.template_from_file(self.runner.basedir, src, inject)
+            xmldata = template.template_from_file(self.runner.basedir, src, inject)
         except Exception, e:
             result = dict(failed=True, msg=str(e))
             return ReturnData(conn=conn, comm_ok=False, result=result)
