@@ -14,7 +14,7 @@ data_files = [ ('/usr/share/ansible', glob('./library/*')) ]
 print "DATA FILES=%s" % data_files
 
 setup(name='ansible-provisioning',
-      version=__version__,
+      version=open('./VERSION').read(1000),
       description='Minimal SSH command and control',
       author=__author__,
       author_email='michael.dehaan@gmail.com',

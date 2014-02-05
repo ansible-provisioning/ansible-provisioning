@@ -1,4 +1,4 @@
-include README.md packaging/rpm/ansible-prpvisioning.spec COPYING
+include README.md packaging/rpm/ansible-provisioning.spec COPYING VERSION
 include packaging/disutils.setup.py
 recursive-include docs *
 recursive-include library *
