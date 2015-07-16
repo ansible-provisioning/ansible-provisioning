@@ -89,6 +89,20 @@ except ImportError:
 # Surpress warnings from hpilo
 warnings.simplefilter('ignore')
 
+
+def parse_flat_interface(entry, non_numeric='hw_eth_ilo'):
+    try:
+        factname = 'hw_eth' + str(int(entry['Port']) - 1)
+    except:
+        factname = non_numeric
+
+    facts = {
+        'macaddress': entry['MAC'].replace('-', ':'),
+        'macaddress_dash': entry['MAC']
+    }
+    return (factname, facts)
+
+
 def main():
 
     module = AnsibleModule(
@@ -121,19 +135,23 @@ def main():
             facts['hw_product_name'] = entry['Product Name']
             facts['hw_product_uuid'] = entry['cUUID']
         elif entry['type'] == 209: # Embedded NIC MAC Assignment
-            for (name, value) in [ (e['name'], e['value']) for e in entry['fields'] ]:
-                if name.startswith('Port'):
-                    try:
-                        factname = 'hw_eth' + str(int(value) - 1)
-                    except:
-                        factname = 'hw_eth_ilo'
-                elif name.startswith('MAC'):
-                    facts[factname] = {
-                        'macaddress': value.replace('-', ':'),
-                        'macaddress_dash': value
-                    }
-        elif entry['type'] == 209: # HPQ NIC iSCSI MAC Info
-            for (name, value) in [ (e['name'], e['value']) for e in entry['fields'] ]:
+            if entry.has_key('fields'):
+                for (name, value) in [ (e['name'], e['value']) for e in entry['fields'] ]:
+                    if name.startswith('Port'):
+                        try:
+                            factname = 'hw_eth' + str(int(value) - 1)
+                        except:
+                            factname = 'hw_eth_ilo'
+                    elif name.startswith('MAC'):
+                        facts[factname] = {
+                            'macaddress': value.replace('-', ':'),
+                            'macaddress_dash': value
+                        }
+            else:
+                (factname, entry_facts) = parse_flat_interface(entry, 'hw_eth_ilo')
+                facts[factname] = entry_facts
+        elif entry['type'] == 209:  # HPQ NIC iSCSI MAC Info
+            for (name, value) in [(e['name'], e['value']) for e in entry['fields']]:
                 if name.startswith('Port'):
                     try:
                         factname = 'hw_iscsi' + str(int(value) - 1)
@@ -144,6 +162,9 @@ def main():
                         'macaddress': value.replace('-', ':'),
                         'macaddress_dash': value
                     }
+        elif entry['type'] == 233:  # Embedded NIC MAC Assignment (Alternate data format)
+            (factname, entry_facts) = parse_flat_interface(entry, 'hw_eth_ilo')
+            facts[factname] = entry_facts
 
     module.exit_json(ansible_facts=facts)
 
