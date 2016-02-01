@@ -29,7 +29,7 @@ except ImportError:
 
 DOCUMENTATION = ''' 
 ---
-module: vsphere_client
+module: vsphere_guest
 short_description: Creates a virtual guest on vsphere.
 description:
      - Communicates with vsphere, creating a new virtual guest OS based on
