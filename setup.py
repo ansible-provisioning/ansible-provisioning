@@ -17,13 +17,13 @@ setup(name='ansible-provisioning',
       version=open('./VERSION').read(1000),
       description='Minimal SSH command and control',
       author=__author__,
-      author_email='michael.dehaan@gmail.com',
-      url='http://ansible.cc/',
+      author_email=__author_email__,
+      url='http://github.com/ansible-provisioning/ansible-provisioning',
       license='GPLv3',
       install_requires=['ansible'],
       package_dir={ 'ansible': 'lib/ansible' },
-      packages=[
-         'ansible.runner.action_plugins',
-      ],
+#      packages=[
+#         'ansible.runner.action_plugins',
+#      ],
       data_files=data_files
 )
