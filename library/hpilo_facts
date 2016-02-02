@@ -45,10 +45,15 @@ options:
 examples:
   - description: Task to gather facts from a HP iLO interface only if the system is an HP server
     code: |
-      - local_action: hpilo_facts host=$ilo_address login=$ilo_login password=$ilo_password
-        only_if: "'$cmdb_hwmodel'.startswith('HP ')
-      - local_action: fail msg="CMDB serial ($cmdb_serialno) does not match hardware serial ($hw_system_serial) !"
-        only_if: "'$cmdb_serialno' != '$hw_system_serial'"
+      - hpilo_facts:
+          host: YOUR_ILO_ADDRESS
+          login: YOUR_ILO_LOGIN
+          password: YOUR_ILO_PASSWORD
+        when: cmdb_hwmodel.startswith('HP ')
+        delegate_to: localhost
+      - fail:
+          msg: 'CMDB serial ({{ cmdb_serialno }}) does not match hardware serial ({{ hw_system_serial }}) !'
+        when: cmdb_serialno != hw_system_serial
   - description: Typical output of HP iLO_facts for a physical system
     code: |
       - hw_bios_date: "05/05/2011"

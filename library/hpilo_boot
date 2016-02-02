@@ -73,12 +73,22 @@ options:
 examples:
   - description: Task to boot a system using an ISO from an HP iLO interface only if the system is an HP server
     code: |
-      - local_action: fail msg="CMDB serial ($cmdb_serialno) does not match hardware serial ($hw_system_serial) !"
-        only_if: "'$cmdb_serialno' != '$hw_system_serial'"
-      - local_action: hpilo_boot host=$ilo_address login=$ilo_login password=$ilo_password media=cdrom image=$iso_url
-        only_if: "'$cmdb_hwmodel'.startswith('HP ')"
+      - hpilo_boot:
+          host: YOUR_ILO_ADDRESS
+          login: YOUR_ILO_LOGIN
+          password: YOUR_ILO_PASSWORD
+          media: cdrom
+          image: http://some-web-server/iso/boot.iso
+        when: cmdb_hwmodel.startswith('HP ')
+        delegate_to: localhost
   - description: Power off a server
-    code: "local_action: hpilo_boot host=$ilo_address login=$ilo_login password=$ilo_password state=poweroff"
+    code:
+      hpilo_boot:
+        host: YOUR_ILO_HOST
+        login: YOUR_ILO_LOGIN
+        password: YOUR_ILO_PASSWORD
+        state: poweroff
+      delegate_to: localhost
 notes:
   - To use a USB key image you need to specify floppy as boot media.
   - This module ought to be run from a system that can access the HP iLO
