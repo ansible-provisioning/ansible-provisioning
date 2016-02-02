@@ -51,7 +51,9 @@ examples:
         </login>
       </ribcl>
   - description: Configure HP iLO using test.xml
-    code: hponcfg src=hponcfg.xml
+    code:
+    - hponcfg:
+        src: hponcfg.xml
 notes:
   - You need a working hponcfg on the target system.
 '''
