@@ -115,7 +115,7 @@ def main():
             host = dict(required=True),
             login = dict(default='Administrator'),
             password = dict(default='admin'),
-            media = dict(default=None, choices=['cdrom', 'floppy', 'hdd', 'network', 'normal', 'usb']),
+            media = dict(default=None, choices=['cdrom', 'floppy', 'rbsu', 'hdd', 'network', 'normal', 'usb']),
             image = dict(default=None),
             state = dict(default='boot_once', choices=['boot_always', 'boot_once', 'connect', 'disconnect', 'no_boot', 'poweroff']),
             force = dict(default='no', choices=BOOLEANS),
