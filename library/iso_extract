@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # (c) 2013, Jeroen Hoekx <jeroen.hoekx@dsquare.be>
+# (c) 2016, Matt Robinson <git@nerdoftheherd.com>
 #
 # This file is part of Ansible
 #
@@ -44,8 +45,6 @@ options:
 examples:
   - description: Extract kernel and ramdisk from a LiveCD
     code: iso_extract image=/tmp/rear-test.iso dest=/tmp/virt-rear files=isolinux/kernel,isolinux/initrd.cgz
-notes:
-  - This module does not do copy checks and always copies
 '''
 
 ### This module extracts files from an ISO image
@@ -60,13 +59,14 @@ def main():
             image=dict(required=True),
             dest=dict(required=True),
             files=dict(required=True, type='list'),
-        )
+        ),
+        supports_check_mode = True
     )
     image = module.params['image']
     dest = module.params['dest']
     files = module.params['files']
 
-    changed = True
+    changed = False
 
     if not os.path.exists(dest):
         module.fail_json(msg='Directory "%s" does not exist'%(dest))
@@ -80,16 +80,26 @@ def main():
         os.rmdir(tmp_dir)
         module.fail_json(msg='Failed to mount image "%s"'%(image))
 
-    for file in files:
-        try:
-            shutil.copy(os.path.join(tmp_dir, file), dest)
-        except IOError:
-            module.run_command('umount "%s"'%tmp_dir)
-            os.rmdir(tmp_dir)
-            module.fail_json(msg='Could not copy file "%s" from ISO'%(file))
+    try:
+        for file in files:
+            tmp_src = os.path.join(tmp_dir, file)
+            src_hash = module.sha1(tmp_src)
 
-    module.run_command('umount "%s"'%tmp_dir)
-    os.rmdir(tmp_dir)
+            dest_file = os.path.join(dest, os.path.basename(file))
+
+            if os.path.exists(dest_file):
+                dest_hash = module.sha1(dest_file)
+            else:
+                dest_hash = None
+
+            if src_hash != dest_hash:
+                if not module.check_mode:
+                    shutil.copy(tmp_src, dest_file)
+
+                changed = True
+    finally:
+        module.run_command('umount "%s"'%tmp_dir)
+        os.rmdir(tmp_dir)
 
     module.exit_json(changed=changed)
 
