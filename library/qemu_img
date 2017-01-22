@@ -85,7 +85,7 @@ def main():
 
     if module.params['state'] == 'present':
         if not module.params['size']:
-            module.fail_json(msg='Parameter 'size' required')
+            module.fail_json(msg="Parameter 'size' required")
         size = module.params['size'] * 1024 * 1024
 
         if not os.path.exists(dest):
