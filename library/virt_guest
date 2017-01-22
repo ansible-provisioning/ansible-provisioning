@@ -76,6 +76,7 @@ def main():
             state = dict(choices=['present','absent'], default='present'),
             src = dict(),
         ),
+        supports_check_mode=True,
     )
 
     connection = module.params['connection']
@@ -102,13 +103,15 @@ def main():
         if not src:
             module.fail_json(msg="Parameter 'src' not defined.")
         try:
-            conn.defineXML( open(src,'r').read() )
+            if not module.check_mode:
+                conn.defineXML( open(src,'r').read() )
         except OSError, e:
             module.fail_json(msg=str(e))
         changed = True
         provisioning_status = 'unprovisioned'
     elif state == 'absent' and domain:
-        domain.undefine()
+        if not module.check_mode:
+            domain.undefine()
         changed = True
         provisioning_status = 'absent'
 
