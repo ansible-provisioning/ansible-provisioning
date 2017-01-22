@@ -67,12 +67,13 @@ def main():
 
     module = AnsibleModule(
         argument_spec = dict(
-            dest=dict(type='str', required=True),
-            opt=dict(type='str'),
-            format=dict(type='str', default='qcow2'),
-            size=dict(type='int'),
-            state=dict(type='str', choices=['absent', 'present'], default='present'),
+            dest = dict(type='str', required=True),
+            opt = dict(type='str'),
+            format = dict(type='str', default='qcow2'),
+            size = dict(type='int'),
+            state = dict(type='str', choices=['absent', 'present'], default='present'),
         ),
+        supports_check_mode = True,
     )
 
     changed = False
@@ -84,14 +85,15 @@ def main():
 
     if module.params['state'] == 'present':
         if not module.params['size']:
-            module.fail_json(msg="Parameter 'size' required")
+            module.fail_json(msg='Parameter 'size' required')
         size = module.params['size'] * 1024 * 1024
 
         if not os.path.exists(dest):
-            if not opt:
-                module.run_command('%s create -f %s "%s" %s'%(qemu_img, img_format, dest, size), check_rc=True)
-            else:
-                module.run_command('%s create -f %s -o %s "%s" %s'%(qemu_img, img_format, opt, dest, size), check_rc=True)
+            if not module.check_mode:
+                if not opt:
+                    module.run_command('%s create -f %s "%s" %s'%(qemu_img, img_format, dest, size), check_rc=True)
+                else:
+                    module.run_command('%s create -f %s -o %s "%s" %s'%(qemu_img, img_format, opt, dest, size), check_rc=True)
             changed = True
         else:
             rc, stdout, _ = module.run_command('%s info "%s"'%(qemu_img, dest), check_rc=True)
@@ -103,12 +105,14 @@ def main():
             if not current_size:
                 module.fail_json(msg='Unable to read virtual disk size of %s'%(dest))
             if current_size != size:
-                module.run_command('%s resize "%s" %s'%(qemu_img, dest, size), check_rc=True)
+                if not module.check_mode:
+                    module.run_command('%s resize "%s" %s'%(qemu_img, dest, size), check_rc=True)
                 changed = True
 
     if module.params['state'] == 'absent':
         if os.path.exists(dest):
-            os.remove(dest)
+            if not module.check_mode:
+                os.remove(dest)
             changed = True
 
     module.exit_json(changed=changed)
