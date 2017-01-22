@@ -78,7 +78,7 @@ examples:
   - description: Boot from the local disk.
     code: virt_boot domain=archrear boot=hd
   - description: Boot a specific kernel with a special command line.
-    code: virt_boot domain=archrear kernel=$storage/kernel-archrear initrd=$storage/initramfs-archrear.img cmdline="root=/dev/ram0 vga=normal rw"
+    code: virt_boot domain=archrear kernel={{ storage }}/kernel-archrear initrd={{ storage }}/initramfs-archrear.img cmdline="root=/dev/ram0 vga=normal rw"
   - description: Boot from the harddisk and if that fails from the network.
     code: virt_boot domain=archrear boot=hd,network
   - description: Enable the boot menu.
@@ -108,6 +108,8 @@ except ImportError:
     print "failed=True msg='libvirt python module unavailable'"
     sys.exit(1)
 
+from ansible.module_utils.basic import AnsibleModule
+
 def get_disk(doc, device):
     for disk in doc.findall('.//disk'):
         target = disk.find('target')
@@ -122,10 +124,10 @@ def attach_disk(domain, doc, device, image):
         if source is not None and source.get('file') == image:
             return False
 
-    xml = '''<disk type="file" device="disk">
+    xml = '''<disk type="file" device="cdrom">
                 <driver name="qemu" type="raw"/>
                 <source file="{path}"/>
-                <target bus="virtio" dev="{dev}"/>
+                <target bus="ide" dev="{dev}"/>
              </disk>'''.format(path=image, dev=device)
     domain.updateDeviceFlags(xml, libvirt.VIR_DOMAIN_AFFECT_CONFIG)
     return True
@@ -293,6 +295,5 @@ def main():
 
     module.exit_json(changed=changed)
 
-# this is magic, see lib/ansible/module_common.py
-#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
-main()
+if __name__ == '__main__':
+    main()
