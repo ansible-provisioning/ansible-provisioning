@@ -1,0 +1,4 @@
+hypervisor ansible_host=localhost ansible_python_interpreter=/usr/bin/python2
+
+[vm]
+centos7 on_host=hypervisor

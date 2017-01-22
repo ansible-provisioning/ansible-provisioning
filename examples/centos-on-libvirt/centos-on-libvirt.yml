@@ -1,0 +1,86 @@
+---
+
+- name: Provision a CentOS VM on libvirt
+  hosts: vm
+  user: root
+  gather_facts: no
+
+  vars:
+    vm_definitions_dir: /tmp/vm-definitions
+
+  tasks:
+
+  - delegate_to: "{{ on_host }}"
+    block:
+    - name: Allocate storage for the VM
+      qemu_img:
+        dest: "/var/lib/libvirt/images/{{ inventory_hostname }}.qcow2"
+        size: 10240
+
+    - name: Create a folder for VM definitions
+      file:
+        path: "{{ vm_definitions_dir }}"
+        state: directory
+
+    - name: Create a VM definition
+      template:
+        src: templates/vm.xml
+        dest: "{{ vm_definitions_dir }}/{{ inventory_hostname }}.xml"
+
+    - name: Create the VM
+      virt_guest:
+        guest: "{{ inventory_hostname }}"
+        src: "{{ vm_definitions_dir }}/{{ inventory_hostname }}.xml"
+      register: guests
+
+    - name: Create a group of unprovisioned systems
+      group_by:
+        key: "{{ guests.provisioning_status }}"
+
+- name: Provision unprovisioned systems
+  hosts: unprovisioned
+  user: root
+  gather_facts: no
+
+  vars:
+    vm_image_dir: /tmp/vm-images
+    centos_mirror: http://ftp.belnet.be/ftp.centos.org
+    ks_url: https://raw.githubusercontent.com/jhoekx/ansible-provisioning/master/examples/centos-on-libvirt/templates/centos7.ks
+
+  tasks:
+
+  - delegate_to: "{{ on_host }}"
+    block:
+    - name: Create VM image directory
+      file:
+        path: "{{ vm_image_dir }}/{{ inventory_hostname }}"
+        state: directory
+
+    - name: Download PXE images
+      get_url:
+        url: "{{ centos_mirror }}/7/os/x86_64/images/pxeboot/{{ item }}"
+        dest: "{{ vm_image_dir }}/{{ inventory_hostname }}/{{ item }}"
+      with_items:
+      - initrd.img
+      - vmlinuz
+
+    - name: Boot the VM using the PXE images
+      virt_boot:
+        guest: "{{ inventory_hostname }}"
+        kernel: "{{ vm_image_dir }}/{{ inventory_hostname }}/vmlinuz"
+        initrd: "{{ vm_image_dir }}/{{ inventory_hostname }}/initrd.img"
+        cmdline: "inst.text latefcload inst.ks={{ ks_url }} inst.sshd devfs=nomount ip=dhcp"
+
+    - name: Wait until the VM stops
+      virt:
+        name: "{{ inventory_hostname }}"
+        command: status
+      register: result
+      until: "{{ result.status == 'shutdown' }}"
+      delay: 10
+      retries: 120
+
+    - name: Start the VM
+      virt_boot:
+        guest: "{{ inventory_hostname }}"
+        boot: hd

@@ -1,0 +1,56 @@
+<domain type='kvm'>
+    <name>{{ inventory_hostname }}</name>
+    <memory>{{ memory|default(2048)|int * 1024 }}</memory>
+    <vcpu>{{ vcpu|default(2)|int }}</vcpu>
+
+    <os>
+        <type arch='x86_64' machine='pc'>hvm</type>
+        <boot dev='hd'/>
+    </os>
+
+    <features>
+        <acpi/>
+        <apic/>
+        <pae/>
+    </features>
+
+    <clock offset='utc'>
+        <timer name='pit' tickpolicy='delay'/>
+    </clock>
+
+    <on_poweroff>destroy</on_poweroff>
+    <on_reboot>restart</on_reboot>
+    <on_crash>restart</on_crash>
+
+    <devices>
+
+        <disk type='block' device='disk'>
+            <driver name='qemu' type='qcow2' cache='writeback'/>
+            <source dev='/var/lib/libvirt/images/{{ inventory_hostname }}.qcow2'/>
+            <target dev='vda' bus='virtio'/>
+        </disk>
+
+        <disk type='file' device='cdrom'>
+            <driver name='qemu' type='raw'/>
+            <target dev='hdc' bus='ide'/>
+            <readonly/>
+        </disk>
+
+        <interface type='network'>
+            <source network='default'/>
+            <model type='virtio'/>
+        </interface>
+
+        <serial type='pty'>
+            <target port='0'/>
+        </serial>
+        <console type='pty'>
+            <target port='0'/>
+        </console>
+        <input type='mouse' bus='ps2'/>
+        <graphics type='vnc' port='-1' autoport='yes'/>
+        <video>
+            <model type='cirrus' vram='9216' heads='1'/>
+        </video>
+    </devices>
+</domain>
