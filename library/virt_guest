@@ -49,9 +49,9 @@ options:
     required: false
 examples:
   - description: Create a guest
-    code: virt_guest guest=${name} src=templates/virt-${name}.xml
+    code: virt_guest guest={{ name }} src=templates/virt-{{ name }}.xml
   - description: Remove a guest
-    code: virt_guest guest=${name} state=absent
+    code: virt_guest guest={{ name }} state=absent
 requirements: [ "libvirt" ]
 notes:
   - Run this on the libvirt host.
@@ -66,6 +66,8 @@ try:
 except ImportError:
     print "failed=True msg='libvirt python module unavailable'"
     sys.exit(1)
+
+from ansible.module_utils.basic import AnsibleModule
 
 def main():
 
@@ -104,7 +106,8 @@ def main():
             module.fail_json(msg="Parameter 'src' not defined.")
         try:
             if not module.check_mode:
-                conn.defineXML( open(src,'r').read() )
+                with open(src, 'r') as f:
+                    conn.defineXML(f.read())
         except OSError, e:
             module.fail_json(msg=str(e))
         changed = True
@@ -117,6 +120,5 @@ def main():
 
     module.exit_json(changed=changed, provisioning_status=provisioning_status)
 
-# this is magic, see lib/ansible/module_common.py
-#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
-main()
+if __name__ == '__main__':
+    main()
