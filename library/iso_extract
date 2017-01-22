@@ -47,11 +47,11 @@ examples:
     code: iso_extract image=/tmp/rear-test.iso dest=/tmp/virt-rear files=isolinux/kernel,isolinux/initrd.cgz
 '''
 
-### This module extracts files from an ISO image
-
 import os
 import shutil
 import tempfile
+
+from ansible.module_utils.basic import AnsibleModule
 
 def main():
     module = AnsibleModule(
@@ -103,6 +103,5 @@ def main():
 
     module.exit_json(changed=changed)
 
-# this is magic, see lib/ansible/module_common.py
-#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
-main()
+if __name__ == '__main__':
+    main()
