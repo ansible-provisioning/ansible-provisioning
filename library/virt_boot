@@ -148,13 +148,13 @@ def main():
         argument_spec = dict(
             domain=dict(required=True, aliases=['guest']),
             boot=dict(),
-            bootmenu=dict(choices=BOOLEANS),
+            bootmenu=dict(type='bool'),
             kernel=dict(),
             initrd=dict(),
             cmdline=dict(),
             device=dict(default='hdc'),
             image=dict(),
-            start=dict(choices=BOOLEANS, default='yes'),
+            start=dict(type='bool', default='yes'),
         ),
         required_one_of = [['boot','kernel','image','bootmenu']],
         mutually_exclusive = [['boot','kernel']]
