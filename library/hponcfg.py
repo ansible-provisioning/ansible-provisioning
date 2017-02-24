@@ -18,25 +18,37 @@
 # You should have received a copy of the GNU General Public License
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
-DOCUMENTATION = '''
+ANSIBLE_METADATA = {'status': ['preview'],
+                    'supported_by': 'community',
+                    'version': '1.0'}
+
+DOCUMENTATION = r'''
 ---
-author: Dag Wieers
 module: hponcfg
+author: Dag Wieers (@dagwieers)
+version_added: "2.3"
 short_description: Configure HP iLO interface using hponcfg
 description:
-  - This modules configures the HP iLO interface using hponcfg.
-version_added: "0.9"
+- This modules configures the HP iLO interface using hponcfg.
 options:
-  minfw:
-    description:
-    - The minimum firmware level needed
-  src:
+  path:
     description:
     - The XML file as accepted by hponcfg
     required: true
-examples:
-  - description: Example hponcfg configuration XML
-    code: |
+    aliases: ['src']
+  minfw:
+    description:
+    - The minimum firmware level needed
+requirements:
+- hponcfg tool
+notes:
+- You need a working hponcfg on the target system.
+'''
+
+EXAMPLES = r'''
+- name: Example hponcfg configuration XML
+  copy:
+    content: |
       <ribcl VERSION="2.0">
         <login USER_LOGIN="user" PASSWORD="password">
           <rib_info MODE="WRITE">
@@ -50,27 +62,27 @@ examples:
           </rib_info>
         </login>
       </ribcl>
-  - description: Configure HP iLO using test.xml
-    code:
-    - hponcfg:
-        src: hponcfg.xml
-notes:
-  - You need a working hponcfg on the target system.
+    dest: /tmp/enable-ssh.xml
+
+- name: Configure HP iLO using enable-ssh.xml
+  hponcfg:
+    src: /tmp/enable-ssh.xml
 '''
 
-import subprocess
+from ansible.module_utils.basic import AnsibleModule
 
 def main():
 
     module = AnsibleModule(
         argument_spec = dict(
-            src = dict(required=True),
-            minfw = dict(),
+            src = dict(required=True, type='path', aliases=['path']),
+            minfw = dict(type='str'),
         )
     )
 
     # Consider every action a change (not idempotent yet!)
     changed = True
+
     src = module.params['src']
     minfw = module.params['minfw']
 
@@ -89,6 +101,5 @@ def main():
 
     module.exit_json(changed=changed, stdout=stdout, stderr=stderr)
 
-# this is magic, see lib/ansible/module_common.py
-#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
-main()
+if __name__ == '__main__':
+    main()
