@@ -19,32 +19,53 @@
 # You should have received a copy of the GNU General Public License
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
-DOCUMENTATION = '''
+ANSIBLE_METADATA = {'status': ['preview'],
+                    'supported_by': 'core',
+                    'version': '1.0'}
+
+DOCUMENTATION = r'''
 ---
-author: Jeroen Hoekx
+author:
+- Jeroen Hoekx (@jhoekx)
+- Matt Robinson (@ribbons)
 module: iso_extract
-short_description: This module extracts files from an ISO image.
+short_description: Extract files from an ISO image.
 description:
-  - "This module mounts an iso image in a temporary directory and extracts
-     files from there to a given destination."
-version_added: "1.2"
+- This module mounts an iso image in a temporary directory and extracts
+  files from there to a given destination.
+version_added: "2.3"
 options:
   image:
     description:
-    - The ISO image to extract files from
+    - The ISO image to extract files from.
     required: true
+    aliases: ['path', 'src']
   dest:
     description:
     - The destination directory to extract files to.
     required: true
   files:
     description:
-    - A comma separated list of files to extract from the image.
+    - A list of files to extract from the image.
+    - Extracting directories does not work.
     required: true
+notes:
+- Only the file hash (content) is taken into account for extracting files
+  from the ISO image.
+'''
 
-examples:
-  - description: Extract kernel and ramdisk from a LiveCD
-    code: iso_extract image=/tmp/rear-test.iso dest=/tmp/virt-rear files=isolinux/kernel,isolinux/initrd.cgz
+EXAMPLES = r'''
+- name: Extract kernel and ramdisk from a LiveCD
+  iso_extract:
+    image: /tmp/rear-test.iso
+    dest: /tmp/virt-rear/
+    files:
+    - isolinux/kernel
+    - isolinux/initrd.cgz
+'''
+
+RETURN = r'''
+#
 '''
 
 import os
@@ -52,15 +73,16 @@ import shutil
 import tempfile
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.pycompat24 import get_exception
 
 def main():
     module = AnsibleModule(
         argument_spec = dict(
-            image=dict(required=True),
-            dest=dict(required=True),
-            files=dict(required=True, type='list'),
+            image = dict(required=True, type='path', aliases=['path', 'src']),
+            dest = dict(required=True, type='path'),
+            files = dict(required=True, type='list'),
         ),
-        supports_check_mode = True
+        supports_check_mode = True,
     )
     image = module.params['image']
     dest = module.params['dest']
@@ -69,17 +91,18 @@ def main():
     changed = False
 
     if not os.path.exists(dest):
-        module.fail_json(msg='Directory "%s" does not exist'%(dest))
+        module.fail_json(msg='Directory "%s" does not exist' % dest)
 
     if not os.path.exists(os.path.dirname(image)):
-        module.fail_json(msg='ISO image "%s" does not exist'%(image))
+        module.fail_json(msg='ISO image "%s" does not exist' % image)
 
     tmp_dir = tempfile.mkdtemp()
-    rc, out, err = module.run_command('mount -o loop "%s" "%s"'%(image, tmp_dir))
+    rc, out, err = module.run_command('mount -o loop,ro "%s" "%s"' % (image, tmp_dir))
     if rc != 0:
         os.rmdir(tmp_dir)
-        module.fail_json(msg='Failed to mount image "%s"'%(image))
+        module.fail_json(msg='Failed to mount ISO image "%s"' % image)
 
+    e = None
     try:
         for file in files:
             tmp_src = os.path.join(tmp_dir, file)
@@ -97,9 +120,13 @@ def main():
                     shutil.copy(tmp_src, dest_file)
 
                 changed = True
+    except:
+        e = get_exception()
     finally:
-        module.run_command('umount "%s"'%tmp_dir)
+        module.run_command('umount "%s"' % tmp_dir)
         os.rmdir(tmp_dir)
+        if e:
+            module.fail_json(msg='Failed to copy file(s). %s' % e)
 
     module.exit_json(changed=changed)
 
