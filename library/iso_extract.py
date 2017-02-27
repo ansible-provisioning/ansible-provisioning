@@ -120,13 +120,9 @@ def main():
                     shutil.copy(tmp_src, dest_file)
 
                 changed = True
-    except:
-        e = get_exception()
     finally:
         module.run_command('umount "%s"' % tmp_dir)
         os.rmdir(tmp_dir)
-        if e:
-            module.fail_json(msg='Failed to copy file(s). %s' % e)
 
     module.exit_json(changed=changed)
 
